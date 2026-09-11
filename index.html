@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ご当地ころころにゃんこ コレクション帳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FFFFFF;
+    --ink:#2B2A28;
+    --mute:#8A857C;
+    --line:#E8E3D8;
+    --sky:#DCEBF6;
+    --stamp:#D8422F;
+    --pad:#F6F2EA;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Rounded Mplus 1c","Yu Gothic",sans-serif;
+    font-weight:500;color:var(--ink);background:var(--paper);
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{
+    position:sticky;top:0;z-index:5;background:var(--paper);
+    padding:14px 16px 10px;border-bottom:2px solid var(--line);
+  }
+  h1{font-size:20px;font-weight:900;letter-spacing:.02em;line-height:1.2}
+  h1 small{display:block;font-size:12px;font-weight:700;color:var(--mute);margin-top:2px}
+  .score{display:flex;align-items:baseline;gap:6px;margin-top:8px}
+  .score b{font-size:34px;font-weight:900;color:var(--stamp);line-height:1}
+  .score span{font-size:13px;color:var(--mute);font-weight:700}
+  .bar{height:8px;border-radius:99px;background:var(--pad);margin-top:8px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--stamp);border-radius:99px;transition:width .35s ease}
+  .filters{display:flex;gap:6px;margin-top:10px}
+  .filters button{
+    flex:1;border:2px solid var(--line);background:var(--paper);color:var(--ink);
+    font:inherit;font-weight:700;font-size:13px;padding:7px 0;border-radius:99px;cursor:pointer;
+  }
+  .filters button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .khbtn{
+    margin-top:8px;width:100%;font:inherit;font-weight:700;font-size:12px;padding:7px 0;
+    border-radius:99px;border:2px dashed #3B7BB5;background:var(--paper);color:#3B7BB5;cursor:pointer;
+  }
+  .khbtn.on{background:#3B7BB5;color:#fff;border-style:solid}
+  .jump{display:flex;gap:6px;overflow-x:auto;padding:8px 16px 4px;scrollbar-width:none}
+  .jump::-webkit-scrollbar{display:none}
+  .jump a{
+    flex:0 0 auto;font-size:12px;font-weight:700;color:var(--ink);text-decoration:none;
+    background:var(--sky);padding:5px 11px;border-radius:99px;white-space:nowrap;
+  }
+  main{padding:4px 16px 40px}
+  section{margin-top:22px}
+  section h2{
+    font-size:15px;font-weight:900;display:flex;align-items:center;gap:8px;
+    padding-bottom:6px;border-bottom:2px dashed var(--line);margin-bottom:10px;
+  }
+  section h2 em{font-style:normal;font-size:12px;color:var(--mute);font-weight:700;margin-left:auto}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media(min-width:520px){.grid{grid-template-columns:repeat(4,1fr)}}
+  @media(min-width:760px){.grid{grid-template-columns:repeat(6,1fr)}}
+  .card{
+    position:relative;border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit;
+    cursor:pointer;display:block;width:100%;
+  }
+  .card:focus-visible{outline:3px solid var(--sky);outline-offset:3px;border-radius:12px}
+  .pic{
+    position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--pad);
+    border:2px solid var(--line);transition:transform .15s ease;
+  }
+  .card:active .pic{transform:scale(.96)}
+  .pic img{width:100%;height:100%;object-fit:cover;display:block;transition:filter .2s ease,opacity .2s ease}
+  .pic .noimg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px}
+  .card.got .pic{border-color:var(--stamp);box-shadow:0 0 0 2px var(--stamp) inset}
+  .stamp{
+    position:absolute;right:-6px;bottom:-6px;width:46%;aspect-ratio:1;border-radius:50%;
+    border:3px solid var(--stamp);color:var(--stamp);display:flex;align-items:center;justify-content:center;
+    font-weight:900;font-size:13px;letter-spacing:.05em;background:rgba(255,255,255,.85);
+    transform:rotate(-14deg) scale(0);opacity:0;pointer-events:none;
+    mix-blend-mode:multiply;
+  }
+  .stamp::after{content:"";position:absolute;inset:3px;border-radius:50%;border:1.5px solid var(--stamp)}
+  .card.got .stamp{animation:hanko .32s cubic-bezier(.2,1.6,.4,1) forwards}
+  @keyframes hanko{
+    0%{transform:rotate(-14deg) scale(1.8);opacity:0}
+    60%{transform:rotate(-14deg) scale(.92);opacity:1}
+    100%{transform:rotate(-14deg) scale(1);opacity:1}
+  }
+  @media(prefers-reduced-motion:reduce){.card.got .stamp{animation:none;transform:rotate(-14deg) scale(1);opacity:1}}
+  .loc{display:inline-block;font-size:10px;font-weight:700;color:var(--mute);margin-top:6px;line-height:1.2}
+  .kh{display:inline-block;font-size:9px;font-weight:700;color:#fff;background:#3B7BB5;border-radius:99px;padding:1px 6px;margin:6px 0 0 4px;vertical-align:top;line-height:1.5}
+  .nm{font-size:12px;font-weight:700;line-height:1.3;margin-top:1px;word-break:keep-all;overflow-wrap:anywhere}
+  .del{
+    position:absolute;top:-6px;left:-6px;width:24px;height:24px;border-radius:50%;
+    background:var(--ink);color:#fff;border:2px solid #fff;font-size:14px;line-height:1;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .empty{color:var(--mute);font-size:13px;padding:10px 0}
+  /* add form */
+  .add{margin-top:30px;background:var(--pad);border-radius:16px;padding:16px}
+  .add h3{font-size:15px;font-weight:900}
+  .add p{font-size:12px;color:var(--mute);margin-top:4px;line-height:1.5}
+  .add label{display:block;font-size:12px;font-weight:700;margin-top:12px}
+  .add input{
+    width:100%;margin-top:4px;font:inherit;font-size:15px;padding:10px 12px;
+    border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);
+  }
+  .add input:focus{outline:none;border-color:var(--ink)}
+  .add button{
+    margin-top:14px;width:100%;font:inherit;font-weight:900;font-size:15px;padding:12px;
+    border-radius:99px;border:0;background:var(--stamp);color:#fff;cursor:pointer;
+  }
+  .add button:disabled{opacity:.4;cursor:default}
+  .backup{margin-top:16px}
+  .bkrow{display:flex;gap:8px}
+  .add .bk{margin-top:12px;background:var(--ink)}
+  .add .bk2{background:#fff;color:var(--ink);border:2px solid var(--ink)}
+  .add textarea{
+    width:100%;margin-top:10px;font:inherit;font-size:12px;padding:10px 12px;
+    border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);resize:vertical;
+  }
+  .add textarea:focus{outline:none;border-color:var(--ink)}
+  .modal{position:fixed;inset:0;background:rgba(43,42,40,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:24px}
+  .modal[hidden]{display:none}
+  .box{background:#fff;border-radius:18px;padding:22px 20px 16px;width:100%;max-width:340px;text-align:center}
+  .box p{font-size:17px;font-weight:900;line-height:1.4}
+  .box .sub{font-size:13px;font-weight:700;color:var(--mute);margin-top:6px}
+  .btns{display:flex;gap:10px;margin-top:18px}
+  .btns button{flex:1;font:inherit;font-weight:900;font-size:15px;padding:12px;border-radius:99px;cursor:pointer}
+  #mNo{background:#fff;color:var(--ink);border:2px solid var(--line)}
+  #mYes{background:var(--stamp);color:#fff;border:0}
+  #mYes.off{background:var(--ink)}
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:99px;
+    opacity:0;transition:all .25s ease;pointer-events:none;white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .note{font-size:11px;color:var(--mute);margin-top:24px;line-height:1.6}
+  .note a{color:var(--mute)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ご当地ころころにゃんこ<small>コレクション帳 — タップでゲット印</small></h1>
+  <div class="score"><b id="cnt">0</b><span>/ <span id="tot">0</span> ゲット</span></div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="filters">
+    <button class="on" data-f="all">ぜんぶ</button>
+    <button data-f="got">持ってる</button>
+    <button data-f="not">まだ</button>
+  </div>
+  <button class="khbtn" id="khBtn">キーホルダーのみも表示する</button>
+</header>
+
+<nav class="jump" id="jump"></nav>
+
+<main>
+  <div id="list"></div>
+
+  <div class="add">
+    <h3>新しい種類を追加する</h3>
+    <p>公式サイトに増えたら、ここから登録できます。画像URLは空欄でもOK。</p>
+    <label>場所<input id="aLoc" placeholder="例：北海道"></label>
+    <label>名前<input id="aName" placeholder="例：らべんだーにゃん"></label>
+    <label>画像URL（任意）<input id="aImg" placeholder="https://…"></label>
+    <button id="aBtn" disabled>追加する</button>
+  </div>
+
+  <div class="add backup">
+    <h3>バックアップ</h3>
+    <p>チェック内容と追加した種類を文字列にして保存・復元できます。書き出したらメモアプリなどに貼っておいてください。</p>
+    <div class="bkrow">
+      <button id="bkOut" class="bk">書き出す</button>
+      <button id="bkIn" class="bk bk2">読み込む</button>
+    </div>
+    <textarea id="bkText" rows="4" placeholder="ここに書き出した文字列が出ます／復元するときはここに貼り付けて「読み込む」"></textarea>
+  </div>
+
+  <p class="note">元データ：<a href="https://yell-world.jp/gotouchi-korokoronyanko/" target="_blank" rel="noopener">株式会社エール 公式ページ</a>（2026年9月時点）。画像は公式サイトの商品写真を表示しています。</p>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="modal" hidden>
+  <div class="box">
+    <p id="mTitle"></p>
+    <p class="sub" id="mSub"></p>
+    <div class="btns">
+      <button id="mNo">やめる</button>
+      <button id="mYes">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const B = "https://yell-world.jp/wp-content/uploads/";
+const P = (ym, slug) => B + ym + "/pop-gotouchi-korokoronyanko_" + slug + ".jpg";
+const J = (ym, name) => B + ym + "/" + name + ".jpg";
+
+// region, location, name, image
+const BUILTIN = [
+  // 北海道・東北
+  ["北海道・東北","北海道","かににゃん",P("2026/02","kaninyan")],
+  ["北海道・東北","北海道","しゃけにゃん",P("2026/02","syakenyan")],
+  ["北海道・東北","北海道","めろんにゃん",P("2026/02","meronnyan")],
+  ["北海道・東北","北海道","とうきびにゃん",P("2026/02","toukibinyan")],
+  ["北海道・東北","五稜郭タワー限定","しんせんぐみにゃん 五稜郭Ver.",P("2025/07","shinsenguminyan_goryoukakuVer02")],
+  ["北海道・東北","青森","りんごにゃん",P("2025/06","ringonyan")],
+  ["北海道・東北","岩手","わんこそばにゃん",P("2025/06","wankosobanyan")],
+  ["北海道・東北","宮城","伊達政宗にゃん",J("2026/04","伊達政宗にゃん")],
+  ["北海道・東北","宮城","ずんだもちにゃん",P("2024/06","zundamochinyan")],
+  ["北海道・東北","秋田","あきたいぬにゃん",J("2026/06","あきたいぬにゃん")],
+  ["北海道・東北","山形","さくらんぼにゃん",J("2026/06","さくらんぼにゃん")],
+  ["北海道・東北","福島","ふくしまももにゃん",P("2025/09","fukushimamomonyan")],
+  ["北海道・東北","福島","あかべこにゃん",P("2025/05","akabekonyan02")],
+  ["北海道・東北","三陸","さんりくかきにゃん",P("2025/07","sanrikukakinyan")],
+  // 関東
+  ["関東","茨城","みとにゃん",P("2025/09","mitonyan")],
+  ["関東","茨城","こきあにゃん",P("2025/09","kocianyan")],
+  ["関東","茨城","ねもふぃらにゃん",P("2023/10","nemofiranyan")],
+  ["関東","あしかがフラワーパーク限定","ふじのはなにゃん",J("2026/04","ふじのはなにゃん")],
+  ["関東","アクアワールド大洗水族館限定","あくあわーるどにゃん",B+"2025/05/pop-gotouchi-korokoronyankoaquaworldnyan.jpg"],
+  ["関東","栃木","ぎょうざにゃん",P("2025/09","gyouzanyan")],
+  ["関東","栃木","ねむりねこにゃん",P("2025/09","nemurinekonyan")],
+  ["関東","栃木","いちごにゃん",P("2025/05","ichigonyan02")],
+  ["関東","那須","なすにゃん",P("2025/05","nasunyan02")],
+  ["関東","東京限定","ひこうきにゃん",J("2026/09","東京_ひこうきにゃん")],
+  ["関東","東京限定","東京タワーにゃん",J("2025/10","東京タワーにゃん_ぬいぐるみ_関東")],
+  ["関東","東京限定","東京スカイツリーにゃん",J("2025/10","東京スカイツリーにゃん_ぬいぐるみ_関東")],
+  ["関東","神奈川","あじさいにゃん",P("2025/09","ajisainyan02")],
+  ["関東","神奈川","江ノ電にゃん",J("2026/07","神奈川_江ノ電にゃん")],
+  // 中部
+  ["中部","新潟","おこめにゃん",J("2026/06","おこめにゃん")],
+  ["中部","新潟","ときにゃん",J("2026/09","新潟_ときにゃんぷち")],
+  ["中部","新潟","かきのたねにゃん",P("2024/07","kakinotanenyan")],
+  ["中部","新潟","ささだんごにゃん",P("2025/05","sasadangonyan02")],
+  ["中部","山梨","ぴーちにゃん",P("2025/06","peachnyan")],
+  ["中部","長野","しんしゅうりんごにゃん",J("2026/07","長野_しんしゅうりんごにゃん")],
+  ["中部","長野・山梨限定","しゃいんますかっとにゃん",J("2026/04","しゃいんますかっとにゃん")],
+  ["中部","信州","おこじょにゃん",P("2024/10","okojyonyan")],
+  ["中部","飛騨限定","さるぼぼにゃん",J("2026/05","さるぼぼにゃん")],
+  ["中部","静岡","しずおかいちごにゃん",P("2025/09","shizuokaichigonyan")],
+  ["中部","静岡","しずおかみかんにゃん",P("2025/09","shizuokamikannyan")],
+  ["中部","富士山付近限定","さかさふじにゃん",J("2026/07","さかさふじにゃん")],
+  ["中部","名古屋","おぐらとーすとにゃん",P("2024/06","oguratoastnyan")],
+  ["中部","名古屋","しゃちほこにゃん",P("2023/10","shachihokonyan")],
+  ["中部","名古屋","えびふらいにゃん",P("2024/06","ebifurainyan")],
+  // 近畿
+  ["近畿","三重","いせえびにゃん",P("2026/02","iseebinyan")],
+  ["近畿","三重","ぱーるにゃん",P("2025/09","pearlnyan02")],
+  ["近畿","滋賀","びわこにゃん",P("2024/10","biwakonyan")],
+  ["近畿","京都","まっちゃにゃん",P("2023/10","macchyanyan")],
+  ["近畿","京都","やつはしにゃん",P("2023/10","yatsuhashinyan")],
+  ["近畿","京都","しんせんぐみにゃん",P("2023/10","shinsenguminyan")],
+  ["近畿","大阪","通天閣にゃん",J("2026/03","通天閣にゃん")],
+  ["近畿","大阪","たこにゃん",P("2024/10","takonyan")],
+  ["近畿","大阪","たこやきにゃん",P("2023/10","takoyakinyan")],
+  ["近畿","大阪","みっくすじゅーすにゃん",P("2024/10","mix-juicenyan")],
+  ["近畿","神戸","すいへいにゃん",P("2024/10","suiheinyan")],
+  ["近畿","神戸","こうべぎゅうにゃん",J("2026/03","こうべぎゅうにゃん")],
+  ["近畿","奈良","しかにゃん",J("2026/07","奈良_しかにゃんぷち")],
+  // 中国・四国
+  ["中国・四国","広島","ひろしまかきにゃん",J("2026/07","広島_ひろしまかきにゃん")],
+  ["中国・四国","広島","ひろしましかにゃん",J("2026/07","広島_ひろしましかにゃん")],
+  ["中国・四国","広島","もみじまんじゅうにゃん",J("2025/10","もみじまんじゅうにゃん_ぬいぐるみ_ぷち中国＆四国")],
+  ["中国・四国","瀬戸内","せとうちれもんにゃん",J("2025/10","せとうちれもんにゃん_ぬいぐるみ_ぷち中国＆四国")],
+  ["中国・四国","山口","ふくにゃん",P("2025/05","fukunyan02")],
+  ["中国・四国","高知","ゆずにゃん",J("2026/06","ゆずにゃん")],
+  ["中国・四国","香川","うどんにゃん",J("2026/06","香川_うどんにゃん")],
+  // 九州・沖縄
+  ["九州・沖縄","福岡","だざいふうめにゃん",J("2026/09","福岡_だざいふうめにゃん")],
+  ["九州・沖縄","福岡","らーめんにゃん",P("2025/05","ra-mennyan02")],
+  ["九州・沖縄","福岡","あまおうにゃん",P("2024/06","amaounyan02")],
+  ["九州・沖縄","北九州","ばななうりにゃん",P("2023/10","bananaurinyan")],
+  ["九州・沖縄","佐賀","むつごろうにゃん",P("2025/05","mutsugorounyan02")],
+  ["九州・沖縄","佐賀","いかにゃん",P("2025/07","ikanyan")],
+  ["九州・沖縄","長崎","ちゃんぽんにゃん",P("2026/02","chanponnyan")],
+  ["九州・沖縄","長崎","かすてらにゃん",P("2024/06","kasuteranyan02")],
+  ["九州・沖縄","長崎","させぼにゃん",P("2025/09","sasebonyan")],
+  ["九州・沖縄","熊本","あそにゃん",J("2026/09","熊本_あそにゃん")],
+  ["九州・沖縄","熊本","すいかにゃん",J("2026/09","熊本_すいかにゃん")],
+  ["九州・沖縄","熊本","でこぽんにゃん",P("2025/05","dekoponnyan02")],
+  ["九州・沖縄","大分","かぼすにゃん",P("2025/05","kabosunyan02")],
+  ["九州・沖縄","別府限定","あかおににゃん",J("2026/07","あかおににゃん_別府限定")],
+  ["九州・沖縄","別府限定","あおおににゃん",J("2026/07","あおおににゃん_別府限定")],
+  ["九州・沖縄","宮崎","ひゅうがなつにゃん",P("2025/09","hyuganatsunyan")],
+  ["九州・沖縄","宮崎","まんごーにゃん",P("2025/05","mangonyan02")],
+  ["九州・沖縄","宮崎","じとっこにゃん",P("2025/05","jitokkonyan02")],
+  ["九州・沖縄","宮崎","はにわにゃん",P("2025/07","haniwanyan")],
+  ["九州・沖縄","鹿児島","くろぶたにゃん",P("2025/05","kurobutanyan02")],
+  ["九州・沖縄","鹿児島","しろくまにゃん",P("2025/05","shirokumanyan02")],
+  ["九州・沖縄","八重山 石垣島限定","いりおもてやまねこにゃん",J("2026/04","いりおもてやまねこにゃん")],
+  ["九州・沖縄","沖縄","おきなわしーさーにゃん あか",J("2026/07","【沖縄】おきなわしーさーにゃん-あか-ぷち")],
+  ["九州・沖縄","沖縄","おきなわしーさーにゃん あお",P("2024/10","okinawaseasarnyan_ao")],
+  ["九州・沖縄","沖縄","おきなわじんべえにゃん",J("2026/07","【沖縄】おきなわじんべえにゃん-ぷち")],
+  // 地域限定
+  ["地域限定","桔梗屋限定","桔梗信玄餅にゃん",J("2025/10","桔梗信玄餅にゃん_ぬいぐるみ_地域限定")],
+  ["地域限定","東海限定","のぶながにゃん",P("2025/09","nobunaganyan")],
+  ["地域限定","地域限定","さつまいもにゃん",P("2025/07","satsumaimonyan")],
+  ["地域限定","温泉地限定","おんせんにゃん",P("2025/05","onsennyan02")],
+  ["地域限定","東京・山梨・静岡限定","ふじにゃん",P("2025/07","fujinyan02")],
+  ["地域限定","東京・山梨・静岡限定","べにふじにゃん",P("2023/10","benifujinyan")],
+].map(([r,l,n,i]) => ({id:l+"|"+n, region:r, loc:l, name:n, img:i, custom:false}));
+
+// キーホルダーのみのアイテム
+const KEYHOLDER = new Set(["かににゃん","しゃけにゃん","めろんにゃん","とうきびにゃん","いかにゃん","させぼにゃん","あかおににゃん","あおおににゃん"]);
+
+const REGIONS = ["北海道・東北","関東","中部","近畿","中国・四国","九州・沖縄","地域限定","キーホルダーのみ","自分で追加"];
+
+let owned = new Set();
+let custom = [];
+let filter = "all";
+let showKH = false;
+const KEY_OWNED = "korokoro:owned", KEY_CUSTOM = "korokoro:custom", KEY_KH = "korokoro:showkh";
+
+// 保存先：Claude内では window.storage、ブラウザで直接開いた時は localStorage
+const hasStore = () => typeof window.storage !== "undefined";
+async function getVal(k){
+  if(hasStore()){ const r = await window.storage.get(k); return r ? r.value : null; }
+  return localStorage.getItem(k);
+}
+async function setVal(k,v){
+  if(hasStore()){ await window.storage.set(k, v); return; }
+  localStorage.setItem(k, v);
+}
+async function load(){
+  try{ const v = await getVal(KEY_OWNED); if(v) owned = new Set(JSON.parse(v)); }catch(e){}
+  try{ const v = await getVal(KEY_CUSTOM); if(v) custom = JSON.parse(v); }catch(e){}
+  try{ const v = await getVal(KEY_KH); showKH = v === "1"; }catch(e){}
+}
+async function saveOwned(){
+  try{ await setVal(KEY_OWNED, JSON.stringify([...owned])); }catch(e){ toast("保存できませんでした（この開き方では記録が残りません）"); }
+}
+async function saveCustom(){
+  try{ await setVal(KEY_CUSTOM, JSON.stringify(custom)); }catch(e){ toast("保存できませんでした"); }
+}
+
+function allItems(){
+  return BUILTIN.map(x => KEYHOLDER.has(x.name) ? {...x, region:"キーホルダーのみ"} : x)
+    .concat(custom.map(c => ({...c, region:"自分で追加", custom:true})));
+}
+function activeItems(){ return showKH ? allItems() : allItems().filter(x => x.region !== "キーホルダーのみ"); }
+
+function esc(s){ return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+function render(){
+  const items = activeItems();
+  document.getElementById("khBtn").classList.toggle("on", showKH);
+  document.getElementById("khBtn").textContent = showKH ? "キーホルダーのみを隠す" : "キーホルダーのみも表示する";
+  const list = document.getElementById("list");
+  const jump = document.getElementById("jump");
+  list.innerHTML = ""; jump.innerHTML = "";
+  let shown = 0;
+  REGIONS.forEach(region => {
+    const rItems = items.filter(x => x.region === region);
+    if(!rItems.length) return;
+    const gotN = rItems.filter(x => owned.has(x.id)).length;
+    const vis = rItems.filter(x => filter==="all" || (filter==="got") === owned.has(x.id));
+    const sec = document.createElement("section");
+    sec.id = "r-" + region;
+    sec.innerHTML = `<h2>${region==="キーホルダーのみ" ? "【キーホルダーのみ】" : esc(region)}<em>${gotN} / ${rItems.length}</em></h2>`;
+    if(!vis.length){
+      sec.insertAdjacentHTML("beforeend", `<p class="empty">${filter==="got" ? "このエリアはまだ0個" : "このエリアはコンプリート！"}</p>`);
+    } else {
+      const g = document.createElement("div"); g.className = "grid";
+      vis.forEach(x => {
+        const got = owned.has(x.id);
+        const b = document.createElement("button");
+        b.className = "card" + (got ? " got" : "");
+        b.setAttribute("aria-pressed", got);
+        b.dataset.id = x.id;
+        const imgHtml = x.img
+          ? `<img src="${esc(x.img)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'noimg',textContent:'🐱'}))">`
+          : `<div class="noimg">🐱</div>`;
+        b.innerHTML = `<div class="pic">${imgHtml}<div class="stamp">GET</div>${x.custom ? `<span class="del" data-del="${esc(x.id)}" title="削除">×</span>` : ""}</div>
+          <span class="loc">${esc(x.loc)}</span>${KEYHOLDER.has(x.name) ? `<span class="kh">キーホルダー</span>` : ""}<div class="nm">${esc(x.name)}</div>`;
+        g.appendChild(b);
+        shown++;
+      });
+      sec.appendChild(g);
+    }
+    list.appendChild(sec);
+    jump.insertAdjacentHTML("beforeend", `<a href="#r-${esc(region)}">${esc(region)}</a>`);
+  });
+  const total = items.length, got = items.filter(x => owned.has(x.id)).length;
+  document.getElementById("cnt").textContent = got;
+  document.getElementById("tot").textContent = total;
+  document.getElementById("bar").style.width = (total ? got/total*100 : 0) + "%";
+}
+
+document.getElementById("list").addEventListener("click", async e => {
+  const del = e.target.closest("[data-del]");
+  if(del){
+    e.stopPropagation();
+    const id = del.dataset.del;
+    if(!await ask("このアイテムを削除しますか？", "自分で追加した種類のみ削除できます", true)) return;
+    custom = custom.filter(c => c.id !== id);
+    owned.delete(id);
+    await saveCustom(); await saveOwned();
+    render(); toast("削除しました");
+    return;
+  }
+  const card = e.target.closest(".card");
+  if(!card) return;
+  const id = card.dataset.id;
+  const nm = card.querySelector(".nm").textContent;
+  const ok = owned.has(id)
+    ? await ask(nm, "ゲットを外しますか？", true)
+    : await ask(nm, "ゲットにしますか？");
+  if(!ok) return;
+  if(owned.has(id)){ owned.delete(id); } else { owned.add(id); }
+  card.classList.toggle("got", owned.has(id));
+  card.setAttribute("aria-pressed", owned.has(id));
+  const items = activeItems();
+  const got = items.filter(x => owned.has(x.id)).length;
+  document.getElementById("cnt").textContent = got;
+  document.getElementById("bar").style.width = (got/items.length*100) + "%";
+  // update section counter
+  const sec = card.closest("section");
+  const region = sec.id.slice(2);
+  const rItems = items.filter(x => x.region === region);
+  sec.querySelector("h2 em").textContent = rItems.filter(x => owned.has(x.id)).length + " / " + rItems.length;
+  await saveOwned();
+  if(filter !== "all") setTimeout(render, 450);
+});
+
+document.getElementById("khBtn").addEventListener("click", async () => {
+  showKH = !showKH;
+  try{ await setVal(KEY_KH, showKH ? "1" : "0"); }catch(e){}
+  render();
+  if(showKH) document.getElementById("r-キーホルダーのみ")?.scrollIntoView({behavior:"smooth"});
+});
+
+document.querySelector(".filters").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  filter = b.dataset.f;
+  document.querySelectorAll(".filters button").forEach(x => x.classList.toggle("on", x === b));
+  render();
+});
+
+const aLoc = document.getElementById("aLoc"), aName = document.getElementById("aName"),
+      aImg = document.getElementById("aImg"), aBtn = document.getElementById("aBtn");
+[aLoc, aName].forEach(i => i.addEventListener("input", () => { aBtn.disabled = !(aLoc.value.trim() && aName.value.trim()); }));
+aBtn.addEventListener("click", async () => {
+  const loc = aLoc.value.trim(), name = aName.value.trim(), img = aImg.value.trim();
+  const id = loc + "|" + name;
+  if(allItems().some(x => x.id === id)){ toast("同じ名前がすでにあります"); return; }
+  custom.push({id, loc, name, img});
+  await saveCustom();
+  aLoc.value = aName.value = aImg.value = ""; aBtn.disabled = true;
+  render();
+  toast(name + " を追加しました");
+  document.getElementById("r-自分で追加").scrollIntoView({behavior:"smooth"});
+});
+
+document.getElementById("bkOut").addEventListener("click", async () => {
+  const data = {v:1, date:new Date().toISOString().slice(0,10), owned:[...owned], custom, showKH};
+  const txt = JSON.stringify(data);
+  document.getElementById("bkText").value = txt;
+  try{ await navigator.clipboard.writeText(txt); toast("書き出してコピーしました"); }
+  catch(e){ toast("書き出しました（下の欄をコピーしてください）"); }
+});
+document.getElementById("bkIn").addEventListener("click", async () => {
+  const txt = document.getElementById("bkText").value.trim();
+  if(!txt){ toast("復元する文字列を貼り付けてください"); return; }
+  let data;
+  try{ data = JSON.parse(txt); if(!Array.isArray(data.owned)) throw 0; }
+  catch(e){ toast("読み込めませんでした。書き出した文字列をそのまま貼ってください"); return; }
+  if(!await ask("バックアップを読み込みますか？", "今の記録に追加されます（上書きではありません）")) return;
+  data.owned.forEach(id => owned.add(id));
+  (data.custom || []).forEach(c => { if(c && c.id && !custom.some(x => x.id === c.id)) custom.push(c); });
+  if(typeof data.showKH === "boolean"){ showKH = data.showKH; try{ await setVal(KEY_KH, showKH ? "1" : "0"); }catch(e){} }
+  await saveOwned(); await saveCustom();
+  render();
+  toast(`読み込みました（ゲット ${owned.size} 件）`);
+});
+
+function ask(title, sub, danger){
+  return new Promise(res => {
+    const m = document.getElementById("modal"), yes = document.getElementById("mYes"), no = document.getElementById("mNo");
+    document.getElementById("mTitle").textContent = title;
+    document.getElementById("mSub").textContent = sub || "";
+    yes.classList.toggle("off", !!danger);
+    m.hidden = false;
+    const done = v => { m.hidden = true; yes.onclick = no.onclick = m.onclick = null; res(v); };
+    yes.onclick = () => done(true);
+    no.onclick = () => done(false);
+    m.onclick = e => { if(e.target === m) done(false); };
+  });
+}
+
+let tt;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+(async () => { await load(); render(); })();
+</script>
+</body>
+</html>
