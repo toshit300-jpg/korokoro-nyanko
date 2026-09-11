@@ -316,6 +316,40 @@ let filter = "all";
 let showKH = false;
 const KEY_OWNED = "korokoro:owned", KEY_CUSTOM = "korokoro:custom", KEY_KH = "korokoro:showkh";
 
+// ===== 端末間同期 (GAS) =====
+const SYNC_URL = ""; // デプロイした GAS ウェブアプリの /exec URL を入れる（空なら従来のローカル保存のみ）
+const SYNC_KEY = "kk-a58f19c3b7d24e60";
+const hasSync = () => SYNC_URL.length > 0;
+let lastRemote = "";
+async function syncGet(){
+  const r = await fetch(SYNC_URL + "?k=" + encodeURIComponent(SYNC_KEY));
+  const d = await r.json();
+  if(!d.ok) throw new Error(d.error);
+  return d.state;
+}
+async function syncPost(body){
+  if(!hasSync()) return;
+  try{
+    await fetch(SYNC_URL, {method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({k:SYNC_KEY, ...body})});
+  }catch(e){ toast("同期できませんでした（オフライン？）"); }
+}
+function _sig(s){ return JSON.stringify([s.owned.slice().sort(), s.custom, !!s.showKH]); }
+async function refreshRemote(rerender = true){
+  if(!hasSync()) return;
+  try{
+    const s = await syncGet();
+    const sig = _sig(s);
+    if(sig !== lastRemote){
+      lastRemote = sig;
+      owned = new Set(s.owned || []);
+      custom = s.custom || [];
+      showKH = !!s.showKH;
+      try{ await saveOwned(); await saveCustom(); await setVal(KEY_KH, showKH ? "1" : "0"); }catch(e){}
+      if(rerender) render();
+    }
+  }catch(e){ /* オフライン時はローカル表示のまま */ }
+}
+
 // 保存先：Claude内では window.storage、ブラウザで直接開いた時は localStorage
 const hasStore = () => typeof window.storage !== "undefined";
 async function getVal(k){
@@ -399,6 +433,7 @@ document.getElementById("list").addEventListener("click", async e => {
     if(!await ask("このアイテムを削除しますか？", "自分で追加した種類のみ削除できます", true)) return;
     custom = custom.filter(c => c.id !== id);
     owned.delete(id);
+    syncPost({op:"custom_del", id});
     await saveCustom(); await saveOwned();
     render(); toast("削除しました");
     return;
@@ -412,6 +447,7 @@ document.getElementById("list").addEventListener("click", async e => {
     : await ask(nm, "ゲットにしますか？");
   if(!ok) return;
   if(owned.has(id)){ owned.delete(id); } else { owned.add(id); }
+  syncPost({op:"toggle", id, got: owned.has(id)});
   card.classList.toggle("got", owned.has(id));
   card.setAttribute("aria-pressed", owned.has(id));
   const items = activeItems();
@@ -429,6 +465,7 @@ document.getElementById("list").addEventListener("click", async e => {
 
 document.getElementById("khBtn").addEventListener("click", async () => {
   showKH = !showKH;
+  syncPost({op:"kh", v: showKH});
   try{ await setVal(KEY_KH, showKH ? "1" : "0"); }catch(e){}
   render();
   if(showKH) document.getElementById("r-キーホルダーのみ")?.scrollIntoView({behavior:"smooth"});
@@ -449,6 +486,7 @@ aBtn.addEventListener("click", async () => {
   const id = loc + "|" + name;
   if(allItems().some(x => x.id === id)){ toast("同じ名前がすでにあります"); return; }
   custom.push({id, loc, name, img});
+  syncPost({op:"custom_add", item:{id, loc, name, img}});
   await saveCustom();
   aLoc.value = aName.value = aImg.value = ""; aBtn.disabled = true;
   render();
@@ -474,6 +512,7 @@ document.getElementById("bkIn").addEventListener("click", async () => {
   (data.custom || []).forEach(c => { if(c && c.id && !custom.some(x => x.id === c.id)) custom.push(c); });
   if(typeof data.showKH === "boolean"){ showKH = data.showKH; try{ await setVal(KEY_KH, showKH ? "1" : "0"); }catch(e){} }
   await saveOwned(); await saveCustom();
+  syncPost({op:"merge", owned:[...owned], custom, showKH});
   render();
   toast(`読み込みました（ゲット ${owned.size} 件）`);
 });
@@ -499,7 +538,16 @@ function toast(msg){
   clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 1800);
 }
 
-(async () => { await load(); render(); })();
+(async () => {
+  await load();          // まずローカルキャッシュで即表示
+  render();
+  await refreshRemote(); // 同期先があれば最新状態を反映
+  // 30秒ごと＋画面に戻ってきた時に再取得（他端末の変更を反映）
+  if(hasSync()){
+    setInterval(() => refreshRemote(), 30000);
+    document.addEventListener("visibilitychange", () => { if(!document.hidden) refreshRemote(); });
+  }
+})();
 </script>
 </body>
 </html>
